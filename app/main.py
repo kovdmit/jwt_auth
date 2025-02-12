@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 
+from routes import router
 
-myapp = FastAPI()
 
+app = FastAPI()
 
-@myapp.post('/calculate')
-async def root(num1: int, num2: int):
-    return {'result': num1 + num2}
+app.include_router(router)
