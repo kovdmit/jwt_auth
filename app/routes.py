@@ -2,7 +2,7 @@ import sqlite3
 
 from fastapi import Depends, APIRouter, HTTPException, status
 
-from app.models import UserResponse, UserRequest
+from models import UserResponse, UserRequest
 from data import UserMapper
 from services.token_services import create_access_token, get_user_from_token
 from utils import verify_password
