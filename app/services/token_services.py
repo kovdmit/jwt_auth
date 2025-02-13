@@ -15,16 +15,21 @@ from config import (
 )
 
 
-def create_access_token(data: dict):
+def create_access_token(data: dict) -> str:
+    """Создает access токен."""
+
     to_encode = data.copy()
     expire = datetime.now() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({'exp': expire})
+
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def get_user_from_token(token: str = Depends(oauth2_scheme)):
+def get_username_from_token(token: str = Depends(oauth2_scheme)) -> str:
+    """Возвращает имя пользователя извлекая его из JWT токена."""
+
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload: dict = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload.get('sub')
     except jwt.ExpiredSignatureError:
         raise HTTPException(

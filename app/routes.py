@@ -4,14 +4,16 @@ from fastapi import Depends, APIRouter, HTTPException, status
 
 from models import UserResponse, UserRequest
 from data import UserMapper
-from services.token_services import create_access_token, get_user_from_token
+from services.token_services import create_access_token, get_username_from_token
 from utils import verify_password
 
 router = APIRouter()
 
 
 @router.post('/register')
-async def register(request_user: UserRequest):
+async def register(request_user: UserRequest) -> dict:
+    """Регистрация пользователей."""
+
     try:
         user_id = UserMapper.create(request_user)
     except sqlite3.IntegrityError:
@@ -25,8 +27,10 @@ async def register(request_user: UserRequest):
         }
 
 
-@router.post('/login')
-async def login(request_user: UserRequest):
+@router.post('/auth')
+async def auth(request_user: UserRequest):
+    """Аутентификация пользователей. Возвращает access JWT токен."""
+
     user = UserMapper.find_by_username(request_user.username)
     if user and verify_password(request_user.password, user.password):
         return {
@@ -37,7 +41,9 @@ async def login(request_user: UserRequest):
 
 
 @router.get('/me', response_model=UserResponse)
-async def me(username: str = Depends(get_user_from_token)):
+async def me(username: str = Depends(get_username_from_token)):
+    """Возвращает информацию о пользователе."""
+
     user = UserMapper.find_by_username(username)
 
     if user:
