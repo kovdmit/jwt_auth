@@ -1,27 +1,46 @@
-from fastapi import Depends, APIRouter
+import sqlite3
 
-from app.models import User
-from data import USERS_DATA
-from services import create_access_token, get_user_from_token
+from fastapi import Depends, APIRouter, HTTPException, status
+
+from app.models import UserResponse, UserRequest
+from data import UserMapper
+from services.token_services import create_access_token, get_user_from_token
 from utils import verify_password
-
 
 router = APIRouter()
 
 
-@router.post('/login')
-async def login(user: User):
-    user_data = USERS_DATA.get(user.username)
-    if user_data and verify_password(user.password, user_data.get('password')):
+@router.post('/register')
+async def register(request_user: UserRequest):
+    try:
+        user_id = UserMapper.create(request_user)
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'error': 'Username already exists'})
+    else:
+        user = UserMapper.find_by_id(user_id)
+
         return {
             'access_token': create_access_token({'sub': user.username}),
             'token_type': 'bearer',
         }
-    return {'error': 'Invalid credentials'}
 
 
-@router.get('/me')
-async def about_me(username: str = Depends(get_user_from_token)):
-    user = USERS_DATA.get(username)
+@router.post('/login')
+async def login(request_user: UserRequest):
+    user = UserMapper.find_by_username(request_user.username)
+    if user and verify_password(request_user.password, user.password):
+        return {
+            'access_token': create_access_token({'sub': user.username}),
+            'token_type': 'bearer',
+        }
+    return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'error': 'Invalid credentials'})
 
-    return {'username': user.get('username')} if user else {'error': 'User not found'}
+
+@router.get('/me', response_model=UserResponse)
+async def me(username: str = Depends(get_user_from_token)):
+    user = UserMapper.find_by_username(username)
+
+    if user:
+        return user
+    else:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={'error': 'User not found'})

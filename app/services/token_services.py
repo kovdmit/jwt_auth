@@ -21,18 +21,19 @@ def create_access_token(data: dict):
     to_encode.update({'exp': expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
+
 def get_user_from_token(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload.get('sub')
     except jwt.ExpiredSignatureError:
-        HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Время истекло.',
             headers={'WWW-Authenticate': 'Bearer'},
         )
     except jwt.InvalidTokenError:
-        HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Некорректный токен.',
             headers={'WWW-Authenticate': 'Bearer'},
