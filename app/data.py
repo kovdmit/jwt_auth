@@ -34,7 +34,7 @@ class UserMapper:
             return User(id=row[0], username=row[1], password=row[2]) if row else None
 
     @classmethod
-    def create(cls, user: UserRequest) -> int:
+    def create(cls, user: User | UserRequest) -> int:
         """Создает запись с новым пользователем. Возвращает ID созданной записи."""
 
         with DB() as db:
